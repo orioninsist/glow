@@ -1,109 +1,436 @@
 # Glow Proje Analizi
 
-Glow, terminal tabanlı bir Markdown okuyucusudur. Markdown dosyalarını terminal üzerinde "pizzazz" (canlılık/gösteriş) ile görüntülemek için tasarlanmıştır.
+Glow, terminalde Markdown görüntülemek için yazılmış bir CLI ve TUI uygulamasıdır. Temel amacı, Markdown dosyalarını düz metin olarak göstermek yerine stil, satır kırma, pager ve etkileşimli gezinme ile okunur hale getirmektir.
 
-## Glow'un Temel Amacı (Olayı)
-Glow, terminal kullanıcılarının Markdown dosyalarını (README, dökümantasyon vb.) sadece düz metin olarak değil, zengin bir görsel formatta okumasını sağlar. Modern terminal özelliklerini (renkler, grafikler, emoji desteği) kullanarak terminali daha güçlü bir döküman okuma platformuna dönüştürür.
+## Proje Ne Yapar?
 
-## En Güzel Görünüm İçin İpuçları
-Glow'da en iyi görünümü elde etmek için şu yöntemleri kullanabilirsin:
+Glow şu işleri yapar:
 
-1.  **TUI Modu:** Terminalde sadece `glow` yazıp Enter'a basarsan, interaktif bir arayüz açılır. Burada dosyaları gezinebilir, arama yapabilir ve daha düzenli bir görünüm elde edebilirsin.
-2.  **Stil Seçimi:** Terminal temanıza göre `-s` parametresini kullanabilirsin:
-    *   `glow -s dark dosya.md` (Koyu tema için)
-    *   `glow -s light dosya.md` (Açık tema için)
-3.  **Özel Stiller:** Kendi JSON stil dosyalarını oluşturarak renkleri ve fontları tamamen kendine göre özelleştirebilirsin.
+* Yerel Markdown dosyalarını render eder.
+* Dizin içinde Markdown dosyaları bulur ve TUI içinde listeler.
+* GitHub ve GitLab depo README'lerini otomatik bulup okur.
+* HTTP ve HTTPS üzerinden gelen Markdown içeriklerini işler.
+* stdin üzerinden gelen içeriği okuyabilir.
+* İsteğe bağlı olarak çıktıyı pager içinde gösterir.
+* TUI modunda dosya tarama, filtreleme, açma, yeniden yükleme ve dış editöre gönderme sağlar.
 
-## Önemli Özellikler
-*   **Uzaktan Okuma:** Doğrudan GitHub veya GitLab linklerini vererek dökümanları terminalde okuyabilirsin. Örneğin: `glow github.com/charmbracelet/glow`
-*   **Arama:** Yerel dizindeki veya Git deposundaki tüm Markdown dosyalarını otomatik olarak bulur.
-*   **Pager Desteği:** Uzun dosyaları `less` benzeri bir sistemle kolayca kaydırarak okumanı sağlar.
-*   **Favoriler:** Sık okuduğun dökümanları işaretleyebilirsin.
+## Verilen Komutun Doğru Yazımı
 
-## Ekstra Bir Şey Gerekli mi?
-Hayır, Glow'u sistemine kurman yeterlidir. Go diliyle yazıldığı için oldukça hızlıdır ve ek bir bağımlılığa ihtiyaç duymaz.
+Sorulan komutun doğru biçimi şöyledir:
 
----
-
-## Özel JSON Stili (Göz Yormayan Tema)
-
-Glow'u daha profesyonel ve göz yormayan (eye-friendly) bir hale getirmek için kendi JSON stil dosyanı oluşturabilirsin. Genellikle yazılımcıların tercih ettiği **Rosé Pine** veya **Catppuccin** benzeri pastel tonlar uzun süreli okumalarda gözü korur.
-
-### Örnek: `goz-yormayan.json`
-Aşağıdaki içeriği bir dosyaya kaydedip `glow -s goz-yormayan.json dosya.md` şeklinde kullanabilirsin:
-
-```json
-{
-  "document": {
-    "margin": 2
-  },
-  "h1": {
-    "color": "#ebbcba",
-    "bold": true
-  },
-  "h2": {
-    "color": "#9ccfd8"
-  },
-  "text": {
-    "color": "#e0def4"
-  },
-  "link": {
-    "color": "#c4a7e7",
-    "underline": true
-  },
-  "code": {
-    "background_color": "#26233a",
-    "color": "#ebbcba"
-  },
-  "code_block": {
-    "margin": 2
-  }
-}
+```bash
+glow -p -s dark -w 0 demo.md
 ```
 
-### JSON Kullanmanın Farkı Nedir?
-*   **Tam Kontrol:** Başlıkların renginden, kod bloklarının arka planına kadar her şeyi terminalinden bağımsız ayarlarsın.
-*   **Standardizasyon:** Ekibindeki herkes aynı JSON'u kullanırsa dökümanlar herkeste aynı görünür.
-*   **Görsel Konfor:** Varsayılan "dark" veya "light" temalar bazen çok kontrastlı olabilir; JSON ile bu kontrastı yumuşatabilirsin.
+`-p-s dark` yazımı doğru değildir. `-p`, `-s` ve `-w` ayrı bayraklardır; yan yana yazılırken tek bir birleşik bayrak gibi davranmazlar.
 
-## Projelerde ve VHS Demolarda Kullanım
+Bu komut `demo.md` dosyasını okur, `dark` stilini uygular, genişliği `0` olarak bırakır ve çıktıyı pager ile gösterir.
 
-### Tüm Projelerde Çalışır mı?
-Evet, bu dosyayı bir kez hazırladıktan sonra bilgisayarındaki tüm Markdown projelerinde sorunsuz kullanabilirsin. `glow` sadece bir "görüntüleyici"dir, projendeki kodları veya dosyaları etkilemez.
+## Ornek Komutlarin Ayrintili Analizi
 
-### VHS Terminal Demo ve Glow Kullanımı
-Eğer bir **VHS terminal kaydı** yapıyorsan (terminal demosu hazırlıyorsan), Glow'u ve bu özel JSON'u kullanmak harika bir fikir!
+Kullanicinin verdigi ornekler ayni aileden gelir, fakat mod secimi ve gorunum davranisi farklidir:
 
-*   **Değişiklik Gerekli mi?** Hayır, VHS `.tape` dosyanın içinde sadece `Type "glow -s goz-yormayan.json README.md"` komutunu vermen yeterli olur.
-*   **Demo Kalitesi:** Profesyonel bir dökümantasyon videosunda düz siyah-beyaz bir çıktı yerine, senin belirlediğin kurumsal veya estetik renklerin olması videonun kalitesini çok artırır.
-*   **Glow Yapılandırması:** Eğer bu stili her zaman kullanmak istersen, `glow config` komutuyla açılan yapılandırma dosyasına `style: "/yol/to/goz-yormayan.json"` satırını ekleyebilirsin. Böylece her seferinde parametre yazmana gerek kalmaz.
+```bash
+glow -t abc.md
+```
 
----
+Bu komut `abc.md` dosyasini TUI icinde acar. `-t` veya `--tui`, Glow'un interaktif terminal arayuzunu kullanmasini ister. Dosya verildigi icin Glow once dosyayi okur, sonra bu icerigi TUI pager gorunumunde gosterir. Dosya yerel bir dosyaysa TUI icinden yeniden yukleme ve editorle acma gibi isler daha anlamli olur.
 
-## Yapılandırma ve Dosya Konumları (Linux/Pacman)
+```bash
+glow -p -s dark -w 100 orioninsist-cli-2.md
+```
 
-Glow'u pacman ile kurduğun için sistemindeki standart yollar şunlardır:
+Bu komut `orioninsist-cli-2.md` dosyasini klasik CLI render modunda isler, sonucu `dark` stil ile bicimlendirir, satirlari en fazla `100` kolon civarinda sarar ve sonucu pager icinde acar. `-p` dis pager kullanir; sistemde `PAGER` ortam degiskeni varsa onu, yoksa `less -r` komutunu tercih eder.
 
-### 1. JSON Stil Dosyasını Nereye Koymalıyım?
-JSON dosyasını istediğin herhangi bir klasöre koyabilirsin. Ancak düzenli olması için şu klasörü tercih etmeni öneririm:
-*   `~/.config/glow/goz-yormayan.json`
+Aralarindaki temel fark sudur:
 
-### 2. Global Olarak Nasıl Aktif Edilir?
-Glow'un her zaman bu stili kullanması için yapılandırma dosyasını (config) düzenlemelisin:
-1.  Terminalde `glow config` komutunu çalıştır.
-2.  Açılan dökümana şu satırı ekle (yolu kendi kullanıcına göre düzenle):
-    ```yaml
-    style: "/home/murat/.config/glow/goz-yormayan.json"
-    ```
-3.  Kaydedip çıktığında artık her `glow` komutu bu stili referans alacaktır.
+| Komut | Mod | Stil | Genislik | Okuma sekli | Ne zaman iyi? |
+|-------|-----|------|----------|-------------|---------------|
+| `glow -t abc.md` | TUI | `auto` veya config | Otomatik/config | Glow'un kendi interaktif arayuzu | Uzun dosya okuma, dosya icinde rahat gezinme |
+| `glow -p -s dark -w 100 orioninsist-cli-2.md` | CLI + pager | `dark` | `100` | `less -r` veya `$PAGER` | Tek dosyayi sabit, kontrollu gorunumle okumak |
 
-### 3. Stil Dosyasını Silersem Ne Olur?
-Eğer yapılandırma dosyasında (config) bir yol belirttiysen ve o dosyayı silersen, Glow o dosyayı bulamadığına dair bir hata mesajı verebilir. Bu durumda `glow config` komutuyla tekrar yapılandırma dosyasını açıp `style` değerini varsayılana döndürmen gerekir.
+## Tum Ana Flag Varyasyonlari ve Farklari
 
-### 4. Varsayılan (Default) Değer Nedir?
-Glow'un varsayılan stil değeri `auto`'dur. 
-*   **Auto Modu:** Terminalinin arka plan rengini algılar. Eğer arka plan koyuysa `dark`, açıksa `light` temasını otomatik olarak seçer.
-*   **Diğer Yerleşik Stiller:** `dark`, `light`, `pink`, `dracula`. Bunları JSON dosyası olmadan da `-s dracula` şeklinde kullanabilirsin.
+Glow flag'lerinde sira onemli degildir. Yani su iki komut ayni davranir:
 
----
-*Bu dosya Antigravity tarafından Türkçe olarak güncellenmiştir.*
+```bash
+glow -p -s dark -w 100 file.md
+glow file.md -w 100 -s dark -p
+```
+
+Fakat her flag'in gorevi ayridir:
+
+| Flag | Uzun hali | Deger alir mi? | Mod | Etki |
+|------|-----------|----------------|-----|------|
+| `-p` | `--pager` | Hayir | CLI | Render sonucunu dis pager icinde acar |
+| `-t` | `--tui` | Hayir | TUI | Glow'un interaktif arayuzunu acar |
+| `-s` | `--style` | Evet | CLI/TUI | Stil secer: `auto`, `dark`, `light`, `pink`, `dracula`, `notty`, `tokyonight` veya JSON dosyasi |
+| `-w` | `--width` | Evet | CLI/TUI | Satir sarma genisligini belirler |
+| `-a` | `--all` | Hayir | TUI | Gizli/ignore edilen dosyalari da listeler |
+| `-l` | `--line-numbers` | Hayir | TUI | TUI dokuman gorunumunde satir numarasi gosterir |
+| `-n` | `--preserve-new-lines` | Hayir | CLI/TUI | Markdown render ederken yeni satirlari korur |
+| `--config` | `--config` | Evet | Genel | Ozel config dosyasi kullanir |
+| `-h` | `--help` | Hayir | Genel | Yardim metnini gosterir |
+| `-v` | `--version` | Hayir | Genel | Surum bilgisini gosterir |
+| `-m` | `--mouse` | Hayir | TUI | Mouse wheel destegini acar; help'te gizlidir |
+
+Gecerli pratik varyasyonlar:
+
+```bash
+glow file.md
+```
+
+Dosyayi dogrudan terminale render eder. Hizli kontrol icin en basit kullanimdir.
+
+```bash
+glow -p file.md
+```
+
+Dosyayi pager icinde acar. Uzun dokumanlarda daha rahattir.
+
+```bash
+glow -t file.md
+```
+
+Dosyayi Glow TUI icinde acar. Interaktif okuma icin daha zengindir.
+
+```bash
+glow -s dark file.md
+glow -s light file.md
+glow -s auto file.md
+glow -s goz-yormayan.json file.md
+```
+
+Stil secimini degistirir. `auto` terminal arka planina gore secim yapar. JSON dosyasi verilirse o dosyanin var olmasi gerekir.
+
+```bash
+glow -w 80 file.md
+glow -w 100 file.md
+glow -w 120 file.md
+glow -w 0 file.md
+```
+
+Genisligi kontrol eder. `80` dar ve odakli, `100` dengeli, `120` genis ekran icin rahat, `0` ise acikca word wrap kapali demektir. Kod agirlikli dosyalarda `-w 0` bazen iyi olur; normal Markdown okumada genellikle fazla genis kacabilir.
+
+```bash
+glow -p -s dark -w 100 file.md
+```
+
+CLI + pager + koyu tema + kontrollu genislik kombinasyonudur. Tek dosya okumak icin en dengeli komutlardan biridir.
+
+```bash
+glow -t -s dark -w 100 -l file.md
+```
+
+TUI + koyu tema + 100 kolon + satir numarasi kombinasyonudur. Dokuman uzerinde gezinirken satir referansi gerekiyorsa guzel secimdir.
+
+```bash
+glow -t -a .
+```
+
+Mevcut dizini TUI ile acar ve normalde gizlenen/ignore edilen dosyalari da gosterir. Proje tarama icin gucludur, ama kalabalik repo'larda listeyi sisirebilir.
+
+Gecersiz veya sorunlu varyasyonlar:
+
+```bash
+glow -t -p file.md
+```
+
+Gecersizdir. Kod `pager && tui` durumunda `cannot use both pager and tui` hatasi verir. Cunku `-t` Glow'un kendi TUI'sini, `-p` ise dis pager'i ister.
+
+```bash
+glow -s olmayan-stil file.md
+```
+
+Eger `olmayan-stil` adinda yerlesik stil yoksa Glow bunu JSON stil dosyasi yolu sanir. Dosya da yoksa hata verir.
+
+```bash
+glow -w abc file.md
+```
+
+Gecersizdir. `-w` sayisal `uint` deger bekler.
+
+```bash
+glow -p-s dark file.md
+```
+
+Dogru yazim degildir. `-p` ve `-s` ayri flag olarak yazilmalidir: `glow -p -s dark file.md`.
+
+## En Iyi Gorunum Onerisi
+
+Genel okuma icin en iyi ve dengeli gorunum:
+
+```bash
+glow -p -s dark -w 100 orioninsist-cli-2.md
+```
+
+Sebebi: `dark` tema uzun terminal okumalarinda gozu daha az yorar, `-w 100` satirlari cok daraltmadan okunur tutar, `-p` ise uzun dokumanda rahat yukari/asagi gezinme saglar.
+
+Interaktif calismak, dosya taramak veya dokumani TUI icinde acip yeniden yuklemek istiyorsan en iyi secim:
+
+```bash
+glow -t -s dark -w 100 -l orioninsist-cli-2.md
+```
+
+Bu secim daha "uygulama gibi" hissettirir. Sadece okumak icin `-p` daha sade ve hizli; dosya uzerinde gezinmek ve proje icinde calismak icin `-t` daha kullanislidir.
+
+## CLI Bayrakları (Tüm Requirement'ler)
+
+Kodda tanımlı bayraklar şunlardır:
+
+* `-p`, `--pager`:
+  - **İşlev**: Çıktıyı pager içinde açar (CLI modu için)
+  - **Varsayılan Pager**: `PAGER` tanımlı değilse `less -r` kullanılır
+  - **Çakışma**: `-t` bayrağı ile birlikte kullanılamaz (TUI modunda pager desteklenmez)
+
+* `-t`, `--tui`:
+  - **İşlev**: CLI çıktısı yerine interaktif TUI açar
+  - **Etki**: Dosya listesi, filtreleme, dış editör entegrasyonu sağlar
+  - **Çakışma**: `-p` bayrağı ile birlikte kullanılamaz (TUI kendi arayüzü vardır)
+
+* `-s`, `--style`:
+  - **İşlev**: Stil adı veya JSON stil dosyası yolu belirtir
+  - **Yerleşik Stiller**: `auto`, `dark`, `light`, `pink`, `dracula`, `notty`, `tokyonight` vb.
+  - **Çoklu Kullanım**: `-s dark`, `-s light`, `-s /path/to/style.json` şeklinde kullanılabilir
+
+* `-w`, `--width`:
+  - **İşlev**: Word wrap genişliğini belirtir
+  - **Varsayılan**: Bayrak verilmezse terminal genişliği otomatik algılanır (bulunamazsa 80 kolon)
+  - **`-w 0` Anlamı**: Açıkça sarmayı devre dışı bırakır (sarma tamamen kapanır)
+
+* `-a`, `--all`:
+  - **İşlev**: TUI içinde gizli (nokta ile başlayan) ve ignore edilen dosyaları gösterir
+  - **Etki**: Varsayılan olarak yok sayılan klasörler (node_modules, GOPATH vb.) da listeye eklenir
+
+* `-l`, `--line-numbers`:
+  - **İşlev**: TUI içinde satır numaralarını gösterir
+
+* `-n`, `--preserve-new-lines`:
+  - **İşlev**: Çıktıda yeni satır karakterlerini korur (varsayılan olarak normalize edilebilir)
+
+* `-m`, `--mouse`:
+  - **İşlev**: TUI için mouse wheel scroll desteğini açar
+  - **Not**: Bu bayrak kullanıcı arayüzünde gizlidir
+
+* `--config`:
+  - **İşlev**: Kullanılacak yapılandırma dosyasını açıkça belirtir
+  - **Desteklenen Format**: `.yml` veya `.yaml`
+
+### Komut Analizi: `glow -t -p -s dark -w 0 demo.md`
+
+**Sorun: Bu komut ÇAKIŞMADIR ve düzeltilmesi gerekir.**
+
+| Bayrak | Değer | İşlev | Sorun |
+|--------|-------|-------|-------|
+| `-t` | - | TUI modunu aç | `-p` ile çakışır |
+| `-p` | - | Pager aç | `-t` ile çakışır |
+| `-s` | `dark` | Dark stil uygula | Sorun yok |
+| `-w` | `0` | Word wrap kapat | Sorun yok |
+| `demo.md` | - | Hedef dosya | Sorun yok |
+
+**Çakışmanın Sebebi**:
+- `-t` bayrağı TUI (Text User Interface) açar. TUI kendi arayüzüne sahiptir ve pager kullanmaz.
+- `-p` bayrağı pager açar. Pager sadece CLI modunda çalışır.
+- Bu ikisini aynı anda kullanmak imkansızdır.
+
+**Düzeltilmiş Versiyonlar**:
+
+1. **TUI Modu** (interaktif liste + arama):
+   ```bash
+   glow -t -s dark demo.md
+   ```
+   (Bayrak sırası önemli değildir: `glow -s dark -t demo.md` da aynıdır)
+
+2. **CLI + Pager Modu** (doğrudan render + pager):
+   ```bash
+   glow -p -s dark -w 0 demo.md
+   ```
+
+3. **CLI Modu** (doğrudan terminal çıktısı):
+   ```bash
+   glow -s dark -w 0 demo.md
+   ```
+
+## Stil Sistemi
+
+`-s` ile verilen değer yerleşik bir stil ise doğrudan kullanılır. Desteklenen yerleşik stiller arasında `auto`, `dark`, `light`, `pink`, `dracula`, `notty` ve `tokyonight` benzeri tanımlar bulunur. Değer yerleşik bir stil değilse Glow bunu JSON stil dosyası yolu olarak yorumlar ve dosyanın varlığını denetler.
+
+`auto` kullanılırsa terminal arka planı algılanır ve koyuysa `dark`, açıksa `light` seçilir. Eğer çıktı terminal değilse ve kullanıcı `style` bayrağını elle vermediyse Glow `notty` stiline geçer.
+
+`glow` ayrıca TUI tarafında `GLAMOUR_STYLE` ortam değişkenini de okuyabilir.
+
+## Genişlik ve Render Davranışı
+
+Render genişliği `-w` ile kontrol edilir. Kod akışı şöyledir:
+
+* Bayrak verilmezse terminal genişliği algılanır.
+* Terminal genişliği bulunamazsa varsayılan olarak `80` kolon kullanılır.
+* TUI içinde pencere genişliği temel alınır, üst sınır olarak `120` kolon uygulanabilir.
+* CLI tarafında `glamour.WithWordWrap(int(width))` ile render edilir.
+
+Önemli ayrım: bayrak hiç verilmezse Glow kendi genişlik keşfini yapar; `-w 0` açıkça verilirse sarma kapatılır.
+
+## Kaynak Türleri
+
+Glow şu giriş türlerini destekler:
+
+* `glow demo.md` ile yerel dosya.
+* `glow -` ile stdin.
+* `glow github.com/charmbracelet/glow` gibi GitHub deposu.
+* `glow gitlab.com/owner/repo` gibi GitLab deposu.
+* `glow https://host.tld/file.md` gibi HTTP/HTTPS URL'leri.
+* Dizin verilirse uygun README dosyası aranır.
+
+GitHub ve GitLab için hedef repo README'si otomatik bulunur. Kısa şema biçimleri `github://owner/repo` ve `gitlab://owner/repo` olarak da çözümlenir; custom hostname desteği yoktur.
+
+## TUI ve CLI Ayrımı
+
+Glow çalıştırıldığında davranış şu şekilde ayrılır:
+
+* Argüman yoksa TUI açılır.
+* Tek argüman bir dizinse TUI o dizinde açılır.
+* Argüman dosya, URL veya `-` ise CLI modu çalışır.
+
+CLI modunda içerik doğrudan render edilir. TUI modunda ise dosya listesi, arama, yardım ve doküman görüntüleme akışları aktif olur.
+
+## TUI Özellikleri
+
+TUI, sadece dosya gösteren bir arayüz değildir. Şunları yapar:
+
+* Geçerli dizin ve alt dizinlerde Markdown dosyaları arar.
+* Git deposu içindeyse depo içini tarar.
+* Fuzzy filtreleme sağlar.
+* Sekmeler arasında geçiş yapabilir.
+* Dosyayı açabilir.
+* Seçili Markdown dosyasını dış editörde açabilir.
+* Açık dosyayı yeniden yükleyebilir.
+* Dosya değişikliklerini izleyecek şekilde fsnotify kullanır.
+* Yardım ekranı gösterir.
+
+### TUI Kısayolları
+
+Dosya listesi görünümünde:
+
+* `j`, `k`, `↑`, `↓`: Seçim değiştirir.
+* `home`, `g`: Listenin başına gider.
+* `end`, `G`: Listenin sonuna gider.
+* `tab`, `L`: Sonraki bölüme geçer.
+* `shift+tab`, `H`: Önceki bölüme geçer.
+* `enter`: Seçili dokümanı açar.
+* `/`: Filtre modunu açar.
+* `?`: Yardım görünümünü büyütür veya küçültür.
+* `!`: Hata varsa hata görünümünü açar.
+* `e`: Seçili dokümanı dış editörde açar.
+* `F`: Dosya listesini yeniden tarar.
+* `r`: Filtrelenmiş doküman görünümünde yardımcı değil; bu tuş pager tarafında yeniden yükleme içindir.
+* `q`: Uygulamadan çıkar.
+* `esc`: Filtre açıkken filtreyi iptal eder.
+
+Filtre düzenleme modunda:
+
+* `esc`: Filtreyi iptal eder.
+* `enter`, `tab`, `shift+tab`, `ctrl+k`, `↑`, `ctrl+j`, `↓`: Filtreyi onaylar veya mevcut sonuçlara göre açma davranışı uygular.
+
+## Pager Özellikleri
+
+Doküman açıldıktan sonra pager görünümünde şu davranışlar vardır:
+
+* `k`, `↑`: Yukarı.
+* `j`, `↓`: Aşağı.
+* `b`, `pgup`: Sayfa yukarı.
+* `f`, `pgdn`: Sayfa aşağı.
+* `u`: Yarım sayfa yukarı.
+* `d`: Yarım sayfa aşağı.
+* `g`, `home`: Üste git.
+* `G`, `end`: Alta git.
+* `c`: İçeriği kopyala.
+* `e`: Bu dokümanı dış editörde aç.
+* `r`: Bu dokümanı yeniden yükle.
+* `esc`: Dosya listesinin bulunduğu TUI ekranına dön.
+* `q`: Çık.
+* `?`: Pager yardımını aç/kapat.
+
+Pager açıkken dosya değişirse Glow fsnotify ile bunu fark edip yeniden yükleyebilir.
+
+## Render Hattı
+
+Render süreci kabaca şöyledir:
+
+1. Kaynak okunur.
+2. Frontmatter varsa çıkarılır.
+3. Kaynak Markdown değilse kod bloğu gibi sarılır.
+4. Glamour renderer oluşturulur.
+5. Seçilen stil, genişlik ve yeni satır davranışı uygulanır.
+6. Pager, terminal çıktı veya TUI akışı çalışır.
+
+Markdown olmayan dosyalar düz Markdown gibi değil, kod bloğu gibi render edilir. Bu yüzden örneğin `.txt` veya uzantısız bir dosya farklı biçimde gösterilebilir.
+
+## Yapılandırma Dosyası
+
+`glow config` komutu yapılandırma dosyasını açar. Dosya yoksa oluşturur. Desteklenen uzantılar `.yml` ve `.yaml`'dır.
+
+Varsayılan yapılandırma örneğinde şu alanlar vardır:
+
+* `style`
+* `mouse`
+* `pager`
+* `width`
+* `all`
+
+Konfigürasyon dosyası bulunamazsa Glow varsayılan dizinlerde `glow.yml` oluşturmaya çalışır.
+
+### Yapılandırma İçin Ortam Değişkenleri
+
+`ui.Config` içinde şu ortam değişkenleri okunur:
+
+* `GOPATH`
+* `HOME`
+* `GLAMOUR_STYLE`
+* `GLOW_HIGH_PERFORMANCE_PAGER`
+* `GLOW_ENABLE_GLAMOUR`
+
+## Yerel Dosya Tarama ve Ignore Kuralları
+
+Glow TUI içinde dosya tararken bazı yolları yok sayar:
+
+* `node_modules`
+* gizli klasörler `.*`
+* `GOPATH`
+* macOS üzerinde ayrıca `Library`
+
+Bu sayede gereksiz veya büyük dizinler listeyi şişirmez.
+
+## Yardım, Man Sayfası ve Gizli Komutlar
+
+Glow'da `man` adlı gizli bir alt komut vardır. Bu komut man sayfası üretir, ancak normal kullanıcı akışında görünmez.
+
+`glow --help` komutu genel kullanım bilgisini verir. TUI içindeki `?` ise uygulama içi yardım ekranını açar.
+
+## Ne Yapamaz?
+
+Glow'un kapsamı sınırlıdır. Şunları yapmaz:
+
+* Genel amaçlı bir dosya editörü değildir.
+* Markdown dışı içerikleri semantik olarak dönüştürmez; gerekirse kod bloğu gibi gösterir.
+* GitHub/GitLab dışındaki özel depo hostlarını otomatik README keşfi için desteklemez.
+* Yerleşik olarak görsel düzenleme veya belge üretme aracı değildir.
+* Dosyaları kendi içinde kalıcı olarak düzenlemez; edit işlemi dış editör açılarak yapılır.
+* Favori işaretleme veya kitaplık yönetimi yapmaz.
+
+## Pratik Kullanım Örnekleri
+
+```bash
+glow README.md
+glow -p README.md
+glow -s dark README.md
+glow -w 60 README.md
+glow github.com/charmbracelet/glow
+glow https://host.tld/file.md
+glow -
+```
+
+## Sonuç
+
+Bu proje, Markdown okuma deneyimini terminale taşır. Gücü, tek başına çıktı üretmesinden değil; TUI tarama, pager, dış editör, fuzzy filtre, GitHub/GitLab README çözümleme, stil sistemi ve otomatik yeniden yükleme gibi parçaları birlikte sunmasından gelir.
+
+Özetle: Glow bir Markdown görüntüleyicisidir, ama yalnızca görüntüleyici değil; aynı zamanda terminal içi bir Markdown keşif ve okuma aracıdır.
