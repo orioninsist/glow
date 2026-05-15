@@ -7,11 +7,46 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
+
+	"github.com/charmbracelet/glow/v2/utils"
 )
+
+// findGitHubMarkdownFile fetches a markdown file linked from the GitHub web UI.
+func findGitHubMarkdownFile(u *url.URL) (*source, bool, error) {
+	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	if len(parts) < 5 || (parts[2] != "blob" && parts[2] != "raw") {
+		return nil, false, nil
+	}
+
+	filePath := strings.Join(parts[4:], "/")
+	if path.Ext(filePath) == "" || !utils.IsMarkdownFile(filePath) {
+		return nil, false, nil
+	}
+
+	rawURL := (&url.URL{
+		Scheme: "https",
+		Host:   "raw.githubusercontent.com",
+		Path:   strings.Join([]string{parts[0], parts[1], parts[3], filePath}, "/"),
+	}).String()
+
+	resp, err := http.Get(rawURL) //nolint: noctx,bodyclose
+	if err != nil {
+		return nil, true, fmt.Errorf("unable to get url: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, true, fmt.Errorf("HTTP status %d", resp.StatusCode)
+	}
+	return &source{resp.Body, rawURL}, true, nil
+}
 
 // findGitHubREADME tries to find the correct README filename in a repository using GitHub API.
 func findGitHubREADME(u *url.URL) (*source, error) {
+	if src, ok, err := findGitHubMarkdownFile(u); ok {
+		return src, err
+	}
+
 	owner, repo, ok := strings.Cut(strings.TrimPrefix(u.Path, "/"), "/")
 	if !ok {
 		return nil, fmt.Errorf("invalid url: %s", u.String())

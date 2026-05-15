@@ -15,14 +15,22 @@ import (
 
 const defaultConfig = `# style name or JSON path (default "auto")
 style: "auto"
-# mouse support (TUI-mode only)
-mouse: false
 # use pager to display markdown
 pager: false
-# word-wrap at width
-width: 80
-# show all files, including hidden and ignored.
+# use the interactive TUI instead of plain CLI output
+tui: false
+# word-wrap at width; set 0 to auto-detect the terminal width
+width: 0
+# mouse support (TUI-mode only)
+mouse: false
+# show all files, including hidden and ignored (TUI-mode only)
 all: false
+# show line numbers (TUI-mode only)
+showLineNumbers: false
+# preserve authored newlines while rendering
+preserveNewLines: false
+# render markdown image lines inline with kitten icat in Kitty (CLI output only)
+kittyImages: false
 `
 
 var configCmd = &cobra.Command{

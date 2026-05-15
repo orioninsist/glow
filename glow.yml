@@ -1,27 +1,33 @@
-# Best default profile for this Glow checkout:
-# reliable local/GitHub/URL Markdown reading, readable dark style, and a tidy TUI.
-style: "/mnt/samsung/orion-backup-local/projects/glow/goz-yormayan.json"
+# Bu checkout icin eksiksiz Glow config'i.
+# Kullanmak icin:
+#   GLOW_CONFIG_HOME=/mnt/samsung/orion-backup-local/projects/glow ./glow README.md
 
-# Keep file/URL/GitHub output in the normal terminal flow.
-# Turn on per command with `-p` only when you want less/$PAGER.
+# Markdown stil adi veya JSON stil dosyasi yolu.
+# En iyi genel gorunum: goz yormayan ozel stil dosyasi.
+style: "/mnt/samsung/orion-backup-local/projects/glow/myconfig/goz-yormayan.json"
+
+# CLI pager modu. Uzun dokumanlarda komutta `-p` kullanmak daha kontrollu.
 pager: false
 
-# Best general reading width: wide enough for code, narrow enough for prose.
+# Interaktif TUI modu. pager ile ayni anda true olamaz.
+tui: false
+
+# Genel okuma icin dengeli genislik: kod icin yeterli, prose icin cok yayvan degil.
 width: 100
 
-# TUI: mouse scrolling is useful and does not affect CLI/URL reads.
+# TUI: mouse/tekerlek destegi. CLI/URL render akisini etkilemez.
 mouse: true
 
-# TUI: keep hidden files, ignored files, node_modules, and dot dirs out by default.
-# Use `-a` per command when you really want to inspect everything.
+# TUI: gizli/ignored dosyalari varsayilan olarak sakla.
+# Her seyi gormek gerektiginde komutta `-a` kullan.
 all: false
 
-# TUI: show stable line references while reading project docs.
+# TUI: proje dokumani okurken satir referansi goster.
 showLineNumbers: true
 
-# TUI: preserve authored line breaks instead of reflowing text aggressively.
+# Markdown'daki yazilmis satir sonlarini koru.
 preserveNewLines: true
 
-# Keep URL/GitHub reads plain and predictable.
-# Enable manually with `--kitty-images` only inside Kitty for local images.
-kittyImages: false
+# Kitty terminalde CLI markdown image satirlarini inline gostermeyi dene.
+# Kitty degilse veya desteklenmeyen kaynakta normal render'a geri doner.
+kittyImages: true

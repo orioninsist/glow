@@ -155,7 +155,7 @@ func newModel(cfg Config, content string) tea.Model {
 	path := cfg.Path
 	if path == "" && content != "" {
 		m.state = stateShowDocument
-		m.pager.currentDocument = markdown{Body: content}
+		m.pager.currentDocument = markdown{Body: content, Note: "remote.md"}
 		return m
 	}
 
@@ -190,6 +190,12 @@ func (m model) Init() tea.Cmd {
 	case stateShowStash:
 		cmds = append(cmds, findLocalFiles(*m.common))
 	case stateShowDocument:
+		if m.common.cfg.Path == "" && m.pager.currentDocument.Body != "" {
+			body := string(utils.RemoveFrontmatter([]byte(m.pager.currentDocument.Body)))
+			cmds = append(cmds, renderWithGlamour(m.pager, body))
+			return tea.Batch(cmds...)
+		}
+
 		content, err := os.ReadFile(m.common.cfg.Path)
 		if err != nil {
 			log.Error("unable to read file", "file", m.common.cfg.Path, "error", err)

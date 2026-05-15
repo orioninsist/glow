@@ -403,8 +403,38 @@ func renderWithKittyImages(r *glamour.TermRenderer, content, sourceURL string) (
 }
 
 func renderKittyImage(imagePath, alt, sourceURL string) (string, bool) {
-	if isURL(imagePath) || imagePath == "" {
+	if imagePath == "" {
 		return "", false
+	}
+
+	var cleanup func()
+	if isURL(imagePath) {
+		var ok bool
+		imagePath, cleanup, ok = downloadKittyImage(imagePath)
+		if cleanup != nil {
+			defer cleanup()
+		}
+		if !ok {
+			return "", false
+		}
+	} else if sourceURL != "" && isURL(sourceURL) {
+		baseURL, err := url.Parse(sourceURL)
+		if err != nil {
+			return "", false
+		}
+		refURL, err := url.Parse(imagePath)
+		if err != nil {
+			return "", false
+		}
+		resolvedURL := baseURL.ResolveReference(refURL).String()
+		var ok bool
+		imagePath, cleanup, ok = downloadKittyImage(resolvedURL)
+		if cleanup != nil {
+			defer cleanup()
+		}
+		if !ok {
+			return "", false
+		}
 	}
 
 	if !filepath.IsAbs(imagePath) {
@@ -435,6 +465,46 @@ func renderKittyImage(imagePath, alt, sourceURL string) (string, bool) {
 		b.WriteByte('\n')
 	}
 	return b.String(), true
+}
+
+func downloadKittyImage(imageURL string) (string, func(), bool) {
+	u, err := url.Parse(imageURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return "", nil, false
+	}
+
+	resp, err := http.Get(imageURL) //nolint:noctx,bodyclose
+	if err != nil {
+		return "", nil, false
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	if resp.StatusCode != http.StatusOK {
+		return "", nil, false
+	}
+
+	ext := filepath.Ext(u.Path)
+	if ext == "" {
+		ext = ".img"
+	}
+
+	f, err := os.CreateTemp("", "glow-kitty-*"+ext)
+	if err != nil {
+		return "", nil, false
+	}
+	cleanup := func() { _ = os.Remove(f.Name()) }
+
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		_ = f.Close()
+		cleanup()
+		return "", nil, false
+	}
+	if err := f.Close(); err != nil {
+		cleanup()
+		return "", nil, false
+	}
+
+	return f.Name(), cleanup, true
 }
 
 func runTUI(path string, content string) error {
