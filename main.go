@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"mvdan.cc/sh/v3/shell"
@@ -43,6 +44,7 @@ var (
 	showAllFiles     bool
 	showLineNumbers  bool
 	preserveNewLines bool
+	kittyImages      bool
 	mouse            bool
 
 	rootCmd = &cobra.Command{
@@ -173,6 +175,7 @@ func validateOptions(cmd *cobra.Command) error {
 	showAllFiles = viper.GetBool("all")
 	preserveNewLines = viper.GetBool("preserveNewLines")
 	showLineNumbers = viper.GetBool("showLineNumbers")
+	kittyImages = viper.GetBool("kittyImages")
 
 	if pager && tui {
 		return errors.New("cannot use both pager and tui")
@@ -308,7 +311,7 @@ func executeCLI(cmd *cobra.Command, src *source, w io.Writer) error {
 		content = utils.WrapCodeBlock(string(b), ext)
 	}
 
-	out, err := r.Render(content)
+	out, err := renderCLIContent(r, content, src.URL, isCode)
 	if err != nil {
 		return fmt.Errorf("unable to render markdown: %w", err)
 	}
@@ -344,6 +347,94 @@ func executeCLI(cmd *cobra.Command, src *source, w io.Writer) error {
 		}
 		return nil
 	}
+}
+
+var markdownImageLineRE = regexp.MustCompile(`^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$`)
+
+func renderCLIContent(r *glamour.TermRenderer, content, sourceURL string, isCode bool) (string, error) {
+	if !kittyImages || isCode || os.Getenv("TERM") != "xterm-kitty" {
+		return r.Render(content)
+	}
+
+	return renderWithKittyImages(r, content, sourceURL)
+}
+
+func renderWithKittyImages(r *glamour.TermRenderer, content, sourceURL string) (string, error) {
+	var out strings.Builder
+	var pending strings.Builder
+
+	flushPending := func() error {
+		if pending.Len() == 0 {
+			return nil
+		}
+		rendered, err := r.Render(pending.String())
+		if err != nil {
+			return err
+		}
+		out.WriteString(rendered)
+		pending.Reset()
+		return nil
+	}
+
+	for _, line := range strings.SplitAfter(content, "\n") {
+		text := strings.TrimSuffix(line, "\n")
+		matches := markdownImageLineRE.FindStringSubmatch(text)
+		if matches == nil {
+			pending.WriteString(line)
+			continue
+		}
+
+		if err := flushPending(); err != nil {
+			return "", err
+		}
+
+		rendered, ok := renderKittyImage(matches[2], matches[1], sourceURL)
+		if !ok {
+			pending.WriteString(line)
+			continue
+		}
+		out.WriteString(rendered)
+	}
+
+	if err := flushPending(); err != nil {
+		return "", err
+	}
+	return out.String(), nil
+}
+
+func renderKittyImage(imagePath, alt, sourceURL string) (string, bool) {
+	if isURL(imagePath) || imagePath == "" {
+		return "", false
+	}
+
+	if !filepath.IsAbs(imagePath) {
+		baseDir := "."
+		if sourceURL != "" && !isURL(sourceURL) {
+			baseDir = filepath.Dir(sourceURL)
+		}
+		imagePath = filepath.Join(baseDir, imagePath)
+	}
+
+	if _, err := os.Stat(imagePath); err != nil {
+		return "", false
+	}
+
+	args := []string{"icat", "--align", "left", "--scale-up", "--transfer-mode", "file", imagePath}
+	out, err := exec.Command("kitten", args...).Output() //nolint:gosec
+	if err != nil {
+		return "", false
+	}
+
+	var b strings.Builder
+	if alt != "" {
+		b.WriteString(alt)
+		b.WriteByte('\n')
+	}
+	b.Write(out)
+	if !strings.HasSuffix(b.String(), "\n") {
+		b.WriteByte('\n')
+	}
+	return b.String(), true
 }
 
 func runTUI(path string, content string) error {
@@ -407,6 +498,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&showAllFiles, "all", "a", false, "show system files and directories (TUI-mode only)")
 	rootCmd.Flags().BoolVarP(&showLineNumbers, "line-numbers", "l", false, "show line numbers (TUI-mode only)")
 	rootCmd.Flags().BoolVarP(&preserveNewLines, "preserve-new-lines", "n", false, "preserve newlines in the output")
+	rootCmd.Flags().BoolVar(&kittyImages, "kitty-images", false, "render local markdown images inline in Kitty terminal (CLI output only)")
 	rootCmd.Flags().BoolVarP(&mouse, "mouse", "m", false, "enable mouse wheel (TUI-mode only)")
 	_ = rootCmd.Flags().MarkHidden("mouse")
 
@@ -420,6 +512,7 @@ func init() {
 	_ = viper.BindPFlag("preserveNewLines", rootCmd.Flags().Lookup("preserve-new-lines"))
 	_ = viper.BindPFlag("showLineNumbers", rootCmd.Flags().Lookup("line-numbers"))
 	_ = viper.BindPFlag("all", rootCmd.Flags().Lookup("all"))
+	_ = viper.BindPFlag("kittyImages", rootCmd.Flags().Lookup("kitty-images"))
 
 	viper.SetDefault("style", styles.AutoStyle)
 	viper.SetDefault("width", 0)

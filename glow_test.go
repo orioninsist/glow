@@ -27,6 +27,12 @@ func TestGlowFlags(t *testing.T) {
 				return width == 40
 			},
 		},
+		{
+			args: []string{"--kitty-images"},
+			check: func() bool {
+				return kittyImages
+			},
+		},
 	}
 
 	for _, v := range tt {

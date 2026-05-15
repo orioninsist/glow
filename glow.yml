@@ -1,0 +1,27 @@
+# Best default profile for this Glow checkout:
+# reliable local/GitHub/URL Markdown reading, readable dark style, and a tidy TUI.
+style: "/mnt/samsung/orion-backup-local/projects/glow/goz-yormayan.json"
+
+# Keep file/URL/GitHub output in the normal terminal flow.
+# Turn on per command with `-p` only when you want less/$PAGER.
+pager: false
+
+# Best general reading width: wide enough for code, narrow enough for prose.
+width: 100
+
+# TUI: mouse scrolling is useful and does not affect CLI/URL reads.
+mouse: true
+
+# TUI: keep hidden files, ignored files, node_modules, and dot dirs out by default.
+# Use `-a` per command when you really want to inspect everything.
+all: false
+
+# TUI: show stable line references while reading project docs.
+showLineNumbers: true
+
+# TUI: preserve authored line breaks instead of reflowing text aggressively.
+preserveNewLines: true
+
+# Keep URL/GitHub reads plain and predictable.
+# Enable manually with `--kitty-images` only inside Kitty for local images.
+kittyImages: false
